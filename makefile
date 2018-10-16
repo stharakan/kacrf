@@ -8,8 +8,8 @@ SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g # -Wall
-LIB := 
-INC := -I include
+LIB :=  -L${HMLP_DIR}/build/lib/ -lhmlp
+INC := -I./include -I${HMLP_DIR}/build/include/
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."
