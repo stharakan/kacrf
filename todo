@@ -1,0 +1,4 @@
+* ADD RUNTIME LINKER 
+need to add -wl, -rpath /path/to/lib to wherever linking happens
+
+
