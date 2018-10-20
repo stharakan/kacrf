@@ -76,7 +76,9 @@ int main( )
 	///** [Step#5] Compress the matrix with an algebraic FMM. */
 	//auto* tree_ptr1 = gofmm::Compress( K1, neighbors1, splitter, rkdtsplitter, config1 );
 
-	auto* tree_ptr1 = hmlp::gofmm::Compress<ADAPTIVE,LEVELRESTRICTION,SPLITTER,RKDTSPLITTER,float>( &X,K1, NN, splitter, rkdtsplitter, config );
+	auto* tree_ptr1 = hmlp::gofmm::Compress
+		<ADAPTIVE,LEVELRESTRICTION,SPLITTER,RKDTSPLITTER,float>
+		( &X,K1, NN, splitter, rkdtsplitter, config );
 	auto& tree1 = *tree_ptr1;
 
 	///** [Step#6] Compute an approximate MATVEC. */
