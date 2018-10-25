@@ -45,12 +45,12 @@ int main( )
 
 	/* CRF setup */
 	// Make image
-	DummyImage* im = DummyImage(imsz); //TODO --> in utilities.cpp
+	DummyImage* im = DummyImage(imsz); //TODO --> in image.cpp
 	
 
 	// Create features
-	hData* Fspa = im->ExtractSpatialFeatures(spa_bw); //TODO --> features.hpp
-	hData* Fapp = im->ExtractAppearanceFeatures(app_bw_spa, app_bw_int); //TODO--> features.hpp
+	hData* Fspa = im->ExtractSpatialFeatures(spa_bw); //TODO -->image.cpp
+	hData* Fapp = im->ExtractAppearanceFeatures(app_bw_spa, app_bw_int); //TODO--> image.cpp
 	
 	Kernel kspa(Fspa, config);
 	Kernel kapp = Kernel(Fapp,config); // appearance kernel
