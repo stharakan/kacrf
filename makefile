@@ -2,12 +2,12 @@
 HMLP_DEV_INC := -I${HMLP_DIR}/build/include/ -I${HMLP_DIR}/frame/ -I${HMLP_DIR}/gofmm -I${HMLP_DIR}/frame/mpi -I${HMLP_DIR}/frame/containers -I${HMLP_DIR}/frame/base -I${HMLP_DIR}/kernel/x86_64/skx -I${HMLP_DIR}/kernel/reference -I${MKLROOT}/include -I${KACRF_DIR}/src
 #HMLP_MASTER_INC := -I${HMLP_DIR}/build/include/ -I${HMLP_DIR}/frame/ -I${HMLP_DIR}/frame/mpi -I${HMLP_DIR}/kernel/mic/knl -I${HMLP_DIR}/kernel/reference -I${MKLROOT}/include
 CC := icpc # This is the main compiler
-# CC := clang --analyze # and comment out the linker last line for sanity
+#CC := clang --analyze # and comment out the linker last line for sanity
 SRCDIR := src
 BUILDDIR := build
 TARGET := bin/runner
 
-##CC := mpicxx
+#CC := mpicxx
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
