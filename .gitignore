@@ -5,3 +5,9 @@ lib/*
 # Ignore any executables
 bin/*
 
+# Ignore any out files
+*.o
+
+# Ignore interaction output, can change this if we'd like to use it
+interaction.m
+
