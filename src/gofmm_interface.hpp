@@ -24,7 +24,7 @@ namespace kacrf
 	GoFMM_config ConfigureGoFMM()
 	{
  		/** [Required] Problem size. */
-  	size_t n = 5000;
+  	size_t n = 2500;
   	/** Maximum leaf node size (not used in neighbor search). */
   	size_t m = 128;
   	/** [Required] Number of nearest neighbors. */
