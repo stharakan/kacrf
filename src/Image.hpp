@@ -44,6 +44,7 @@ namespace kacrf
 				hData fout(2,nn); // positional features
 
 				// Loop over data..
+				#pragma omp parallel for
 				for (int i =0; i < nn; i++)
 				{
 					// get indices
@@ -74,6 +75,7 @@ namespace kacrf
 				hData fout(feats,nn); // positional features + appearance
 
 				// Loop over data..
+				#pragma omp parallel for
 				for (int i =0; i < nn; i++)
 				{
 					// get indices
