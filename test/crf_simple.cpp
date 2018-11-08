@@ -5,6 +5,8 @@
 //#include <containers/VirtualMatrix.hpp>
 #include <gofmm_interface.hpp>
 #include <PairwiseMessage.hpp>
+#include <utilities.hpp>
+#include <Image.hpp>
 
 using namespace std;
 using namespace kacrf;
@@ -45,12 +47,12 @@ int main( )
 
 	/* CRF setup */
 	// Make image
-	DummyImage* im = DummyImage(imsz); //TODO --> in image.cpp
+	TestImage im = TestImage(imsz); 
 	
 
 	// Create features
-	hData* Fspa = im->ExtractSpatialFeatures(spa_bw); //TODO -->image.cpp
-	hData* Fapp = im->ExtractAppearanceFeatures(app_bw_spa, app_bw_int); //TODO--> image.cpp
+	hData Fspa = im->ExtractSpatialFeatures(spa_bw); 
+	hData Fapp = im->ExtractAppearanceFeatures(app_bw_spa, app_bw_int); 
 	
 	Kernel kspa(Fspa, config);
 	Kernel kapp = Kernel(Fapp,config); // appearance kernel
@@ -62,21 +64,22 @@ int main( )
 	// Initial accuracy, print
 	hData<float> dice_scores;
 	hData<float> Q = im->unary;
-	im->PrintDiceScore(dice_scores,0); //TODO also need to change this from im class
+	im.PrintDiceScore(dice_scores); 
+
 
 	for(int iter = 0; iter< 10; iter++)
 	{
 		// Get pairwise message
-		hData m = pm.ComputeMessage(Q); //messenger class computes by calling Kernel multiplies
+		hData m = pm.ComputeMessage(Q); 
 		
 		// Combine with unary for update
-		CRFUpdate(Q, m); // TODO - Q is updated within this func --> in optimizers.cpp for now?
+		CRFUpdate(Q, m,im->unary); 
 		
 		// Normalize update
-		NormalizeProbabilities(Q); //TODO -- Q updated within Normalize Probabilities --> in optimizers.cpp for now?
+		NormalizeProbabilities(Q);
 		
 		// Evaluate accuracy and print 
-		im-> PrintDiceScore(dice_scores,iter+1,Q); //TODO - prints updated dice and loads into dice score --> in utilities.cpp
+		im->PrintDiceScore(dice_scores,iter+1,Q); 
 	}
 
 	/** finalize hmlp */
