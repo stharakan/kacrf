@@ -117,6 +117,7 @@ namespace kacrf
 
 			// loop over u2, 
 			int ksize = this->ksum.size();
+			#pragma omp parallel for
 			for (int i =0; i< u2.size();i++)
 			{
 				// ASSUME GAUSSIAN KERNEL!!
