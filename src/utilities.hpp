@@ -31,6 +31,7 @@ namespace kacrf
 		hData seg(imsz,imsz);
 
 		// loop over nn
+		#pragma omp parallel for
 		for (int j = 0; j < nn; j++)
 		{
 			float pmax = 0.0;
@@ -64,7 +65,7 @@ namespace kacrf
 		float gcount = 0.0; // count guess target hits
 		float icount = 0.0; // count intersection
 
-		// loop
+		// loop TODO -- write omp for this
 		for (int j = 0; j < nn; j++)
 		{
 			bool tbool = truth[j] == target;
@@ -260,6 +261,7 @@ namespace kacrf
 		// assert images are the same size TODO
 	
 		// loop over once
+		#pragma omp parallel for
 		for  (int j = 0; j < pixels ; j++) //col idx
 		{
 			probs[j] = un1[j];
