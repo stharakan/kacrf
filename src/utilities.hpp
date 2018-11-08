@@ -130,6 +130,66 @@ namespace kacrf
 		}
 	}; // end fill func
 	
+	/** Function to Normalize log probabilities -- modifies input */
+	void NormalizeLogProbabilities(hData & probs)
+	{
+		// Params, we assume row --> nn and col --> cc
+		int nn = (int) probs.row();
+		int cc = (int) probs.col();
+		hData bla(nn,cc);
+
+		//std::cout << "unnormalized unexp" << std::endl;
+		//probs.Print();
+		
+		// Loop over each pixel
+		#pragma omp parallel for
+		for (int j = 0; j < nn; j++)
+		{
+			float rowmin = std::numeric_limits<double>::infinity();
+			float rowmax = -std::numeric_limits<double>::infinity();
+			float rowsum = 0.0;
+
+			// Find min probability values
+			for (int i = 0; i < cc; i++)
+			{
+				float cval = probs[j + i*nn];
+				if (cval < rowmin)
+				{
+					rowmin = cval;
+				}
+				if (cval > rowmax)
+				{
+					rowmax = cval;
+				}
+			}
+	
+			// add min to all vals, and exponentiate
+			for (int i = 0; i < cc; i++)
+			{
+				float sval = exp(probs[j + i*nn] - rowmax);
+				
+				probs[j+i*nn] =sval;
+				bla[j+i*nn] =sval;
+
+				// add into row sum
+				rowsum += sval;
+			}
+
+
+			// scale by new row sum, should never have rowsum = 0 since sval is exp
+			for (int i = 0; i < cc; i++)
+			{
+				if (rowsum == 0.0){std::cout << "ayooooo" <<std::endl;};
+				float temp = probs[j + i*nn] / rowsum;
+				probs[j+i*nn] = temp;
+			}
+		}
+		//std::cout << "unnormalized exp" << std::endl;
+		//bla.Print();
+		//
+		//std::cout << "normalized exp" << std::endl;
+		//probs.Print();
+	}; // end log probability normalizer
 	
 	/** Function to Normalize probabilities -- modifies input */
 	void NormalizeProbabilities(hData & probs)
