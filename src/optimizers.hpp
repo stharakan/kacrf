@@ -20,6 +20,7 @@ namespace kacrf
 		if (cc == 2)
 		{
 			// loop over pixels
+			#pragma omp parallel for
 			for (int ni = 0; ni < nn; ni++)
 			{
 				// switch classes
@@ -32,6 +33,7 @@ namespace kacrf
 		else
 		{
 			// loop over pixels
+			#pragma omp parallel for
 			for (int ni = 0; ni < nn; ni++)
 			{
 				float csum = 0.0;
