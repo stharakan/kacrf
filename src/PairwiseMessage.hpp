@@ -27,7 +27,7 @@ namespace kacrf
 		{
 			// Compute multiply
 			hData m;
-			m = this->kspa.Multiply(probs);
+			m = this->kspa.NormMultiply(probs);
 
 			// Normalize
 			//kspa.DiagNormalize(m);
@@ -40,7 +40,7 @@ namespace kacrf
 		{
 			// Compute multiply
 			hData m;
-			m = this->kapp.Multiply(probs);
+			m = this->kapp.NormMultiply(probs);
 
 			// Normalize and subtract diagonal?
 			//kapp.DiagNormalize(m);
@@ -52,24 +52,20 @@ namespace kacrf
 		hData CombineMessages(hData ma, hData ms)
 		{
 			// Find size of messages, initialize TODO: check that these are the same?
-			int cc = (int) ma.row(); // number of classes
-			int nn = (int) ma.col(); // number of rows
-			hData m(cc,nn);
+			int nn = (int) ma.row(); // number of obs
+			int cc = (int) ma.col(); // number of classes
+			hData m(nn,cc);
 
 			// loop over nn, cc
 			#pragma omp parallel for
-			for  (int j = 0; j < nn; j++)
+			for  (int j = 0; j < (nn*cc); j++)
 			{
-				for (int i = 0; i < cc; i++)
-				{
-					int idx = j*nn + i;
-					m[idx] = this->mweight * ( ms[idx] + this->aweight *  ma[idx] ); 
-				}
-
+				m[j] = this->mweight * ( ms[j] + this->aweight *  ma[j] ); 
 			} 
 			return m;
 
 		}; //message combiner
+
 
 		/* Function to compute multiplies and get final message */
 		hData ComputeMessage(hData probs)
@@ -82,6 +78,7 @@ namespace kacrf
 			
 			// Weight and add appropriately
 			hData m = this->CombineMessages(mspa, mapp);
+
 			return m;
 		}; // message computation
 
