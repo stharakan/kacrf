@@ -157,7 +157,7 @@ namespace kacrf
 				std::cout << 0 << " | " << curdice << std::endl;
 
 				// Save to first element of dices, TODO -- check this with an assert?
-				dices[0] = 1.0;
+				dices[0] = curdice;
 			};
 
 			void PrintDiceScore(std::vector<float>&dices, int iter, hData Qmat, float target = 1.0)
