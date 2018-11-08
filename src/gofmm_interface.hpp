@@ -40,11 +40,12 @@ namespace kacrf
   	/** Regularization for the system (K+lambda*I). */
   	float lambda = 1.0;
 		/** Distance metric default is ANGLE_DISTANCE */
-		DistanceMetric metric = ANGLE_DISTANCE;
+		//DistanceMetric metric = ANGLE_DISTANCE;
+		DistanceMetric metric = GEOMETRY_DISTANCE;
 
 
 		// Get config and return
-		GoFMM_config config( ANGLE_DISTANCE, n, m, k, s, stol, budget );
+		GoFMM_config config( metric, n, m, k, s, stol, budget );
 		return config;
 
 
@@ -91,8 +92,44 @@ namespace kacrf
 			// Compress
   		auto* tree_ptr = hmlp::gofmm::Compress( K, neighbors, csplitter, rsplitter, this->config );
 			this->tree_ptr = tree_ptr;
+
+			// Create ksum vector
+			hData w(X.col(),1);
+			std::fill(w.begin(), w.end(),1.0);
+			this->ksum = this->Multiply(w);
+
 		};//end kernel constructor
 
+
+		/* Quick ksum print */
+		void PrintKsum(){this->ksum.Print();};
+
+		/* Normalized multiply */
+		hData NormMultiply(hData w)
+		{
+			//TODO: add check for dimensionality
+			
+			// Dereference tree
+			auto& tree = *(this->tree_ptr);
+
+			// Compute multiply
+  		auto u2 = hmlp::gofmm::Evaluate( tree, w );
+
+			// loop over u2, 
+			int ksize = this->ksum.size();
+			for (int i =0; i< u2.size();i++)
+			{
+				// ASSUME GAUSSIAN KERNEL!!
+				int ki = i % ksize;
+				float denom = this->ksum[ki] - 1.0;
+				// check for zero
+				if (denom <= 1e-7 || denom >= -1e-7){denom=1.0;};
+				
+				float temp = (u2[i] - w[i])/(denom);
+				u2[i] = temp;
+			}
+			return u2;
+		};// End norm multiply function
 
 		/* Multiply */
 		hData Multiply(hData w)
@@ -113,6 +150,7 @@ namespace kacrf
 		private:
 			GoFMM_tree* tree_ptr;
 			GoFMM_config config;
+			hData ksum;
 
 
 	};// end kernel class
