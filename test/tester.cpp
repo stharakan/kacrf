@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdio.h>
 #include <omp.h>
 //#include <hmlp.h>
 //#include <gofmm/gofmm.hpp>
@@ -18,7 +19,8 @@ using namespace kacrf;
 int main( int argc, char *argv[] )
 {
 	/** [Required] Problem size. */
-	size_t n = 40000;
+	size_t n = 10000;
+	sscanf( argv[ 1 ], "%lu", &n );
 	/** Maximum leaf node size (not used in neighbor search). */
 	size_t m = 128;
 	/** [Required] Number of nearest neighbors. */
@@ -124,18 +126,28 @@ int main( int argc, char *argv[] )
 	double it_time = omp_get_wtime() - it_time_beg;
 
 
+	std::cout << "-----------------------" << std::endl;
+	std::cout << "    RESULT SUMMARY  " << std::endl;
+	std::cout << "-----------------------" << std::endl;
+	std::cout << "    PARAMS  " << std::endl;
 	std::cout << "N: "<< n << std::endl;
 	std::cout << "imsz: "<< imsz << std::endl;
 	std::cout << "m: "<< m << std::endl;
 	std::cout << "k: "<< k << std::endl;
 	std::cout << "stol: "<< stol << std::endl;
 	std::cout << "budget: "<< budget << std::endl;
-	
-	std::cout << "  DICE  " << std::endl;
+	std::cout << "crf iters: "<< crf_iters << std::endl;
+	std::cout << "threads: " << omp_get_num_threads() << std::endl;
+	std::cout << "-----------------------" << std::endl;
+	std::cout << "    DICE  " << std::endl;
 	dice_scores.Print();
+	std::cout << "-----------------------" << std::endl;
+	std::cout << "    TIMES  " << std::endl;
 	std::cout << "Feat time: " << feat_time <<std::endl;
 	std::cout << "Kern time: " << kern_time <<std::endl;
 	std::cout << "Iter time: " << it_time <<std::endl;
+	std::cout << "Tot  time: " << feat_time + kern_time + it_time << std::endl;
+	std::cout << "-----------------------" << std::endl;
 
 
 	/** finalize hmlp */
