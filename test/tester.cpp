@@ -1,9 +1,15 @@
-//#include <gofmm.hpp>
-//#include <containers/SPDMatrix.hpp>
+#include <iostream>
+#include <omp.h>
+//#include <hmlp.h>
+//#include <gofmm/gofmm.hpp>
 //#include <containers/KernelMatrix.hpp>
 //#include <containers/VirtualMatrix.hpp>
 #include <gofmm_interface.hpp>
 #include <PairwiseMessage.hpp>
+#include <utilities.hpp>
+#include <Image.hpp>
+#include <optimizers.hpp>
+#include <math.h> //sqrt
 
 using namespace std;
 using namespace kacrf;
@@ -12,7 +18,7 @@ using namespace kacrf;
 int main( int argc, char *argv[] )
 {
 	/** [Required] Problem size. */
-	size_t n = 5000;
+	size_t n = 40000;
 	/** Maximum leaf node size (not used in neighbor search). */
 	size_t m = 128;
 	/** [Required] Number of nearest neighbors. */
@@ -24,68 +30,115 @@ int main( int argc, char *argv[] )
 	/** The amount of direct evaluation (not used in neighbor search). */
 	float budget = 0.01;
 	/** Number of right-hand sides. */
-	size_t nrhs = 5;
+	size_t nrhs = 10;
 	/** Regularization for the system (K+lambda*I). */
 	float lambda = 1.0;	
+	/** Metric style */
+	DistanceMetric metric = ANGLE_DISTANCE;
+	DistanceMetric metric2 = GEOMETRY_DISTANCE;
 
-	// Initialize by calling hmlp api
+
+	/* Set CRF parameters*/
+	size_t imsz =(size_t) sqrt((float) n); // image size
+	float spa_bw = 1.0; // spatial bandwidth in spa kernel
+	float app_bw_spa = 20; // spatial bandwidth in app kernel
+	float app_bw_int = 0.5; // intensity bandwidth in app kernel
+	float app_weight = 100.0; // weighting of app kernel
+	float pair_weight = 1.0; // weighting of pairwise message
+	int crf_iters = 10;
+	
+	//gofmm::CommandLineHelper cmd( argc, argv );
+	
+	/* Initialize HMLP */
   hmlp_init( &argc, &argv );
 
+	// Initialize config TODO -- param version is needed!!
+	//GoFMM_config config = ConfigureGoFMM();
+	GoFMM_config config = ConfigureGoFMM(metric, n, m, k, s, stol, budget);
+	GoFMM_config config2 = ConfigureGoFMM(metric2, n, m, k, s, stol, budget);
 
-
-	// other parameters needed
-	float h = 1.0;
-	size_t d = 4;
-	size_t d2 = 10;
-
-	// Feature sets, rand for now
-	hmlp::Data<float> X1( d, n ); 
-	X1.randn();
-	hmlp::Data<float> X2( d2, n ); 
-	X2.randn();
-	//hmlp::hmlp_printmatrix( (int) n, (int) n, X.data(), sizeof(float) );
-
-	// Initialize config
-	GoFMM_config config = ConfigureGoFMM();
-
-	// Initialize kernels
-	Kernel Kspa(X1, config);
-	Kernel Kapp(X2, config);
+	/* CRF setup */
+	// Make image
+	TestImage im = TestImage(imsz); 
+	hData imun = im.Unary();
 	
-	// Compute message 
-	hmlp::Data<float> w1(n,nrhs ); w1.randn();
-	//auto u1 = K.Multiply(w1);
-	PairwiseMessenger pm(Kspa,Kapp,1.5, 10.0);
-	hData mm = pm.ComputeMessage(w1);
 
-
-	// Neighbor list
-	//hmlp::Data<std::pair<float, std::size_t>> NN;
-
-	//// Virtually initialize kernel matrix
-	//hmlp::KernelMatrix<float> K2( X );
-
-
-	//// Configure gofmm
-	//hmlp::gofmm::Configuration<float> config2( ANGLE_DISTANCE, n, m, k, s, stol, budget );
-
-	//hmlp::gofmm::randomsplit<KernelMatrix<float>, 2, float> rkdtsplitter2( K2 );
-  //hmlp::gofmm::centersplit<KernelMatrix<float>, 2, float> splitter2( K2 );
-	//auto neighbors2 = gofmm::FindNeighbors( K2, rkdtsplitter2, config2 );
-	//
-	//
-	//auto* tree_ptr2 = gofmm::Compress( K2, neighbors2, splitter2, rkdtsplitter2, config2 );
-  //auto& tree2 = *tree_ptr2;
-
-	//hmlp::Data<float> w1(n,nrhs ); w1.randn();
-	//
+	// Create features
+	double feat_time_beg = omp_get_wtime();
+	hData Fspa = im.ExtractSpatialFeatures(spa_bw); 
+	hData Fapp = im.ExtractAppearanceFeatures(app_bw_spa, app_bw_int); 
+	double feat_time = omp_get_wtime() - feat_time_beg;
 	
-	// Finalize by calling hmlp api
+	double kern_time_beg = omp_get_wtime();
+	Kernel kspa = Kernel(Fspa,config2);
+	Kernel kapp = Kernel(Fapp,config2); // appearance kernel
+
+	// Test NormMultiply;
+	//hData w1(n, 2); 
+	//std::fill(w1.begin(), w1.end(),1.0);
+	//hData out1 = kspa.Multiply(imun);
+	//hData out2 = kspa.NormMultiply(imun);
+
+	//std::cout << "ksum" << std::endl;
+	//kspa.PrintKsum();
+	//std::cout << "imun" << std::endl;
+	//imun.Print();
+	//std::cout << "unnormalized" << std::endl;
+	//out1.Print();
+	//std::cout << "normalized" << std::endl;
+	//out2.Print();
+	
+	// Initialize Pairwise messaging object
+	PairwiseMessenger pm = PairwiseMessenger(kspa, kapp, app_weight,pair_weight); 
+	double kern_time = omp_get_wtime() - kern_time_beg;
+	
+	/* CRF iterations */
+	// Initial accuracy, print
+	hData dice_scores(crf_iters+1,1);
+	hData Q = imun;
+	//imun.Print();
+	im.PrintDiceScore(dice_scores); 
+
+	double it_time_beg = omp_get_wtime();
+	for(int iter = 0; iter< crf_iters; iter++)
+	{
+		std::cout << "Iteration begin .." <<std::endl;
+		dice_scores.Print();
+
+		// Get pairwise message
+		hData m = pm.ComputeMessage(Q); 
+		//std::cout << "message print .." <<std::endl;
+		//m.Print();
+		
+		// Combine with unary for update
+		DenseCRFUpdate(Q, m,imun); 
+		
+		// Normalize update
+		NormalizeLogProbabilities(Q);
+		//std::cout << "q distribution print .." <<std::endl;
+		//Q.Print();
+		
+		// Evaluate accuracy and print 
+		im.PrintDiceScore(dice_scores,iter+1,Q); 
+	}
+	double it_time = omp_get_wtime() - it_time_beg;
+
+
+	std::cout << "N: "<< n << std::endl;
+	std::cout << "imsz: "<< imsz << std::endl;
+	std::cout << "m: "<< m << std::endl;
+	std::cout << "k: "<< k << std::endl;
+	std::cout << "stol: "<< stol << std::endl;
+	std::cout << "budget: "<< budget << std::endl;
+	
+	std::cout << "  DICE  " << std::endl;
+	dice_scores.Print();
+	std::cout << "Feat time: " << feat_time <<std::endl;
+	std::cout << "Kern time: " << kern_time <<std::endl;
+	std::cout << "Iter time: " << it_time <<std::endl;
+
+
+	/** finalize hmlp */
 	hmlp_finalize();
-	
-	cout << "Successful CRF run, saving output" << std::endl;
 
-	return 0;
 }
-
-
