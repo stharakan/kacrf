@@ -34,6 +34,9 @@ clean:
 tester:
 	$(CC) $(CFLAGS) test/tester.cpp $(INC) $(LIB) -o bin/tester
 
+tkspa:
+	$(CC) $(CFLAGS) test/testkspa.cpp $(INC) $(LIB) -o bin/kspa-test
+
 # Spikes
 ticket:
 	$(CC) $(CFLAGS) spikes/ticket.cpp $(INC) $(LIB) -o bin/ticket
