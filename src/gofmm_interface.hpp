@@ -147,6 +147,15 @@ namespace kacrf
 
 		};// End multiply function
 
+		/* Self testing func from gofmm */
+		void SelfTest(size_t ntest = 1, size_t nhrs = 10)
+		{
+			auto & tree = *(this->tree_ptr);
+
+			gofmm::SelfTesting(tree, ntest, nhrs); 
+
+		};
+
 
 		private:
 			GoFMM_tree* tree_ptr;
