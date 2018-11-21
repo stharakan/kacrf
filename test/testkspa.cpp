@@ -60,18 +60,18 @@ int main( int argc, char *argv[] )
 	hData Fspa = im.ExtractSpatialFeatures(spa_bw); 
 	double feat_time = omp_get_wtime() - feat_time_beg;
 	
+	// Compute actual kernel
 	double kern_time_beg = omp_get_wtime();
 	Kernel kspa = Kernel(Fspa,config);
 	double kern_time = omp_get_wtime() - kern_time_beg;
-	//
-	size_t gid = 0;
-	auto amap = std::vector<size_t>(1, gid);
-	auto bmap = std::vector<size_t>(100);
-	for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
 
+	
+	size_t gid = 0;
+	//auto amap = std::vector<size_t>(1, gid);
+	//auto bmap = std::vector<size_t>(100);
+	//for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
 	//std::cout << " main call " <<std::endl;
 	//kspa.PrintSources();
-
 	//hData Kab = kspa.Ksub(amap,bmap);
 	//Kab.Print();
 	
@@ -80,13 +80,15 @@ int main( int argc, char *argv[] )
 	double mult_time = 0.0;
 	int miters = 5;
 	float err = 0.0;
+
+	// loop over miters
 	for (int i = 0; i<miters; i++)
 	{
 		// initialize
 		hData w(n,1);
-		//w.randn();
-		w[0] = 1.0;
-		for (int j = 1; j <w.size();j++){ w[j] = 0.0;}
+		w.randn();
+		//w[0] = 1.0;
+		//for (int j = 1; j <w.size();j++){ w[j] = 0.0;}
 
 
 		// multiply
@@ -94,18 +96,16 @@ int main( int argc, char *argv[] )
 		hData u = kspa.Multiply(w);
 		mult_time += omp_get_wtime() - i_mtime;
 
-		// err compute?
+		// err compute
 		size_t gid = 0;
 		err += kspa.ComputeError(w,u,gid);
 
 	}
+
+	//Normalize err,time
 	err = err/ (float) miters;
 	mult_time = mult_time/(float) miters;
-
-	// Gofmm self testing
-	//kspa.SelfTest();
-		
-
+	
 	std::cout << "-----------------------" << std::endl;
 	std::cout << "    RESULT SUMMARY  " << std::endl;
 	std::cout << "-----------------------" << std::endl;
