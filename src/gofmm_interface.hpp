@@ -78,9 +78,10 @@ namespace kacrf
 		{
 			// Set config
 			this->config = conf;
+			this->X = X;
 
 			// Set up kernel
-			hmlp::KernelMatrix<float> K( X );
+			GoFMM_Kernel K( X );
 
 			// Find tree splitters
 			GoFMM_RSPLIT rsplitter( K );
@@ -97,6 +98,16 @@ namespace kacrf
 			hData w(X.col(),1);
 			std::fill(w.begin(), w.end(),1.0);
 			this->ksum = this->Multiply(w);
+
+			//this->PrintSources();
+
+			//size_t gid = 0;
+			//auto amap = std::vector<size_t>(1, gid);
+			//auto bmap = std::vector<size_t>(100);
+			//for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
+			//auto Kab = this->Ksub(amap,bmap);
+			//Kab.Print();
+
 
 		};//end kernel constructor
 
@@ -148,16 +159,144 @@ namespace kacrf
 		};// End multiply function
 
 		/* Self testing func from gofmm */
-		void SelfTest(size_t ntest = 1, size_t nhrs = 10)
+		void SelfTest(size_t ntest = 100, size_t nhrs = 10)
 		{
 			auto & tree = *(this->tree_ptr);
 
-			gofmm::SelfTesting(tree, ntest, nhrs); 
+			hmlp::gofmm::SelfTesting(tree, ntest, nhrs); 
 
+		};
+
+		/* Func to retrieve my kernel */
+		GoFMM_Kernel GetMyKernel()
+		{
+			GoFMM_Kernel K(this->X);
+
+			return K;
+		};
+
+
+		/* Compute Error */
+		float ComputeError(hData w, hData pot, size_t gid = 0)
+		{
+			//auto & tree = *(this->tree_ptr);
+			//auto &K = *tree.setup.K;
+			//hmlp::KernelMatrix<float> K( this->X );
+			// Retrieve kernel
+			GoFMM_Kernel K = this->GetMyKernel();
+
+
+			// Extract relevant kernel bits
+			auto amap = std::vector<size_t>(1, gid);
+			auto bmap = std::vector<size_t>(K.col());
+			for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
+			auto Kab = K(amap,bmap);
+
+			// Extract relevant part of precomputed potentials
+			auto all_pot = std::vector<size_t>(pot.col());
+			for ( size_t j = 0; j< all_pot.size(); j++) all_pot[j] =j;
+			auto potentials = pot(amap,all_pot);
+			auto exact = potentials;
+			
+			// Exact multiply
+			hmlp::xgemm
+		  (
+		    "N", "N",
+		    Kab.row(), w.col(), w.row(),
+		    1.0,   Kab.data(),   Kab.row(),
+		             w.data(),     w.row(),
+		    0.0, exact.data(), exact.row()
+		  );     
+			
+			// Compute exact part norm
+			auto nrm2 = hmlp_norm( exact.row(),  exact.col(), exact.data(), exact.row() );
+
+
+			// Subtract and norm of diff
+			for (size_t j = 0; j< exact.size(); j++)
+			{
+				potentials[j] -= exact[j];
+			}
+			auto err = hmlp::hmlp_norm( potentials.row(), potentials.col(), potentials.data(), potentials.row() ); 
+
+			//// why do this second mm?? TODO
+			//hmlp::xgemm
+		  //(
+		  //  "N", "N",
+		  //  Kab.row(), w.col(), w.row(),
+		  //  -1.0, Kab.data(),       Kab.row(),
+		  //        w.data(),          w.row(),
+		  //   1.0, potentials.data(), potentials.row()
+		  //);
+			
+			std::cout << " Kab print: " << K(0,1) << " "<< K(0,100) << std::endl;
+			Kab.Print();
+			
+			std::cout << " exact/pot print " << std::endl;
+			exact.Print();
+			
+			std::cout << " exact print " << std::endl;
+			exact.Print();
+
+			std::cout << " diff print " << std::endl;
+			potentials.Print();
+
+			std::cout << " nrm exact : " << nrm2 << " nrm pot : " << err <<std::endl;
+
+			// return relative err
+			return err / nrm2;	
+		};
+
+		/* kernel submatx */
+		hData Ksub(std::vector<size_t>& amap, std::vector<size_t>& bmap)
+		{
+
+			//std::cout << " amap: ";
+			//for (auto i: amap) std::cout << i << ' ';
+			//std::cout << std::endl << " bmap: ";
+			//for (auto i: bmap) std::cout << i << ' ';
+			//std::cout << std::endl;
+
+			//if (this->tree_ptr == NULL)
+			//{
+			//	std::cout << " ERROR NULL PTS " << std::endl;
+			//}
+
+			//auto & tree = *(this->tree_ptr);
+			//auto & K = *tree.setup.K;
+			//hmlp::KernelMatrix<float> K( this->X);
+			GoFMM_Kernel K = this->GetMyKernel();
+			
+			
+			//std::vector<size_t> bla(5);
+			//for (int i =0; i<5;i++){bla[i] =i;}
+			//std::cout << " 1st element " << std::endl;
+			//std::cout << K(0,0) <<std::endl;
+			//
+			//
+			//std::cout << " submatrix " << std::endl;
+			//auto K2 = K(amap,bla);
+			//K2.Print();
+
+			auto Kab = K(amap,bmap);
+			return Kab;
+		};
+
+		/* print sources */
+		void PrintSources()
+		{
+			//auto & tree = *(this->tree_ptr);
+			//auto & K = *tree.setup.K;
+			//hmlp::KernelMatrix<float> K( this->X );
+			GoFMM_Kernel K = this->GetMyKernel();
+
+			std::cout << " sources " << std::endl;
+			K.PrintSources();
 		};
 
 
 		private:
+			hData X;
 			GoFMM_tree* tree_ptr;
 			GoFMM_config config;
 			hData ksum;
