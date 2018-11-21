@@ -22,15 +22,15 @@ int main( int argc, char *argv[] )
 	size_t n = 10000;
 	sscanf( argv[ 1 ], "%lu", &n );
 	/** Maximum leaf node size (not used in neighbor search). */
-	size_t m = 128;
+	size_t m = 64;
 	/** [Required] Number of nearest neighbors. */
-	size_t k = 64;
+	size_t k = 4;
 	/** Maximum off-diagonal rank (not used in neighbor search). */
-	size_t s = 128;
+	size_t s = 2;
 	/** Approximation tolerance (not used in neighbor search). */
 	float stol = 1E-5;
 	/** The amount of direct evaluation (not used in neighbor search). */
-	float budget = 0.01;
+	float budget = 0.9;
 	/** Number of right-hand sides. */
 	size_t nrhs = 10;
 	/** Regularization for the system (K+lambda*I). */
