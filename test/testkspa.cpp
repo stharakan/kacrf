@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <omp.h>
 //#include <hmlp.h>
@@ -20,17 +21,23 @@ int main( int argc, char *argv[] )
 {
 	/** [Required] Problem size. */
 	size_t n = 10000;
-	//sscanf( argv[ 1 ], "%lu", &n );
+	sscanf( argv[ 1 ], "%lu", &n );
 	/** Maximum leaf node size (not used in neighbor search). */
-	size_t m = 64;
+	size_t m = 128;
+	sscanf( argv[ 2 ], "%lu", &m );
 	/** [Required] Number of nearest neighbors. */
-	size_t k = 4;
+	size_t k = 64;
+	sscanf( argv[ 3 ], "%lu", &k );
 	/** Maximum off-diagonal rank (not used in neighbor search). */
-	size_t s = 2;
+	size_t s = 8;
+	sscanf( argv[ 4 ], "%lu", &s );
 	/** Approximation tolerance (not used in neighbor search). */
-	float stol = 1E-5;
+	float stol = 1E-6;
+	sscanf( argv[ 5 ], "%f", &stol );
 	/** The amount of direct evaluation (not used in neighbor search). */
 	float budget = 0.9;
+	sscanf( argv[ 6 ], "%f", &budget );
+
 	/** Number of right-hand sides. */
 	size_t nrhs = 10;
 	/** Regularization for the system (K+lambda*I). */
@@ -66,7 +73,7 @@ int main( int argc, char *argv[] )
 	double kern_time = omp_get_wtime() - kern_time_beg;
 
 	
-	size_t gid = 0;
+	size_t ngid = 1000;
 	//auto amap = std::vector<size_t>(1, gid);
 	//auto bmap = std::vector<size_t>(100);
 	//for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
@@ -78,8 +85,11 @@ int main( int argc, char *argv[] )
 
 	// multiply timings
 	double mult_time = 0.0;
-	int miters = 5;
+	int miters = 10;
 	float err = 0.0;
+	kacrf::Statistic mv_err;
+	kacrf::Statistic mv_time;
+	std::vector<float> errs(miters,0.0);
 
 	// loop over miters
 	for (int i = 0; i<miters; i++)
@@ -94,18 +104,15 @@ int main( int argc, char *argv[] )
 		// multiply
 		double i_mtime = omp_get_wtime();
 		hData u = kspa.Multiply(w);
-		mult_time += omp_get_wtime() - i_mtime;
+		mv_time.Update(omp_get_wtime() - i_mtime);
 
 		// err compute
-		size_t gid = 0;
-		err += kspa.ComputeError(w,u,gid);
+		float cerr = kspa.ComputeError(w,u,ngid);
+		mv_err.Update(cerr);
 
 	}
 
-	//Normalize err,time
-	err = err/ (float) miters;
-	mult_time = mult_time/(float) miters;
-	
+	int threads = omp_get_num_threads();
 	std::cout << "-----------------------" << std::endl;
 	std::cout << "    RESULT SUMMARY  " << std::endl;
 	std::cout << "-----------------------" << std::endl;
@@ -114,17 +121,31 @@ int main( int argc, char *argv[] )
 	std::cout << "imsz: "<< imsz << std::endl;
 	std::cout << "m: "<< m << std::endl;
 	std::cout << "k: "<< k << std::endl;
+	std::cout << "s: "<< s << std::endl;
 	std::cout << "stol: "<< stol << std::endl;
 	std::cout << "budget: "<< budget << std::endl;
+	std::cout << "threads: "<< threads << std::endl;
 	std::cout << "-----------------------" << std::endl;
 	std::cout << "    TIMES  " << std::endl;
 	std::cout << "Feat time: " << feat_time <<std::endl;
 	std::cout << "Kern time: " << kern_time <<std::endl;
-	std::cout << "Mult time: " << mult_time <<std::endl;
+	std::cout << "Mult: " << mv_time._avg <<std::endl;
+	mv_time.Print();
 	std::cout << "-----------------------" << std::endl;
-	std::cout << "    ERR  " << std::endl;
-	std::cout << "Matv err: " << err << std:: endl;
+	std::cout << "   MATVEC ERR  " << std::endl;
+	std::cout << "Err: " << mv_err._avg <<std::endl;
+	mv_err.Print();
 	std::cout << "-----------------------" << std::endl;
+
+	/** file to append data to */ 
+	std::string fname = "data_kspa.csv";
+	std::ofstream outfile;
+	outfile.open(fname, std::ios_base::app);
+	outfile << mv_err._avg << "," << mv_err._max << "," << mv_err._min 
+		<< "," << mv_time._avg << "," << mv_time._max << "," << mv_time._min
+		<< "," << kern_time << "," << n << "," << m << "," << k << "," 
+		<< s << "," << stol << "," << budget << "," << threads << std::endl;
+	outfile.close();
 
 
 	/** finalize hmlp */
