@@ -93,6 +93,9 @@ namespace kacrf
 			// Compress
   		auto* tree_ptr = hmlp::gofmm::Compress( K, neighbors, csplitter, rsplitter, this->config );
 			this->tree_ptr = tree_ptr;
+			
+			// Self testing --> just a check
+			hmlp::gofmm::SelfTesting(* (this->tree_ptr) , 100, 10); 
 
 			// Create ksum vector
 			hData w(X.col(),1);
@@ -147,7 +150,7 @@ namespace kacrf
 
 		};// End multiply function
 
-		/* Self testing func from gofmm */
+		/* Self testing func from gofmm TODO -- does not work, seg faults.. something happens with tree ptr that is inaccurate.*/
 		void SelfTest(size_t ntest = 100, size_t nhrs = 10)
 		{
 			auto & tree = *(this->tree_ptr);
@@ -166,15 +169,26 @@ namespace kacrf
 
 
 		/* Compute Error */
-		float ComputeError(hData w, hData pot, size_t gid = 0)
+		float ComputeError(hData w, hData pot, size_t ngid = 1)
 		{
 			// Retrieve kernel
 			GoFMM_Kernel K = this->GetMyKernel();
 
-			// Extract relevant kernel bits
-			auto amap = std::vector<size_t>(1, gid);
+			// make amap
+			size_t totn = K.row();
+			if (ngid > totn){ ngid = totn; }
+			auto amap = std::vector<size_t>(ngid,0);
+			if (ngid != 1)
+			{
+				size_t stepsz = totn/ngid;
+				for ( size_t j = 1; j< amap.size(); j++) amap[j] =j*stepsz;
+			}
+
+			// make bmap
 			auto bmap = std::vector<size_t>(K.col());
 			for ( size_t j = 0; j< bmap.size(); j++) bmap[j] =j;
+
+			// Extract relevant kernel bits 
 			auto Kab = K(amap,bmap);
 
 			// Extract relevant part of precomputed potentials
