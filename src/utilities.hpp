@@ -12,6 +12,45 @@ namespace kacrf
 {
 	const float EPS = 0.0000001; //1e-7
 
+	/* Statistic class */
+	class Statistic
+	{
+	  public:
+	
+	    Statistic()
+	    {
+	      _num = 0;
+	      _max = std::numeric_limits<float>::min();
+	      _min = std::numeric_limits<float>::max();
+	      _avg = 0.0;
+	    };
+	
+	    std::size_t _num;
+	
+	    float _max;
+	
+	    float _min;
+	
+	    float _avg;
+	
+	    void Update( float query )
+	    {
+	      // Compute the sum
+	      _avg = _num * _avg;
+	      _num += 1;
+	      _max = std::max( _max, query );
+	      _min = std::min( _min, query );
+	      _avg += query;
+	      _avg /= _num;
+	    };
+	
+	    void Print()
+	    {
+	      printf( "num %5lu min %.1E max %.1E avg %.1E\n", _num, _min, _max, _avg );
+	    };
+	  
+	}; /** end class Statistic */
+
 	/** Simple function to return hData size (m*n) as int */
 	int hDataSize(hData in)
 	{
