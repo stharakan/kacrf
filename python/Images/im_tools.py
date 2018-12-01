@@ -47,6 +47,7 @@ def CreateProbsFromSeg2D(seg,sigma = 0.35):
     probs = np.where(seg != 0, probs_tg, probs_bg)
     probs = ResetProbabilityZeros(probs)
     probs = probs.reshape( (seg.size,1 ),order='F')
+    probs = probs.astype(np.float32)
     probs = np.concatenate( (probs,1-probs), axis=1 )
 
     return probs
