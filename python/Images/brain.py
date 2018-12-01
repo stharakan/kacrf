@@ -187,6 +187,6 @@ class Brain:
         # write probs to binary
         impath = os.path.join(self.bdir,probsname)
         probs = np.fromfile(impath,dtype=np.float32)
-        probs = probs.reshape( (im.size,-1), order ='F')
+        probs = probs.reshape( (-1, 240*240), order = 'F')
 
         return im, seg, probs
