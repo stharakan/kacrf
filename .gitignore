@@ -2,8 +2,11 @@
 build
 lib/*
 
+
 # Ignore any executables
 bin/*
+__pycache__
+*.bin
 
 # Ignore any out files
 *.o
