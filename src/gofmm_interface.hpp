@@ -8,8 +8,6 @@
 #include <containers/KernelMatrix.hpp>
 
 
-
-
 namespace kacrf
 {
 	typedef hmlp::Data<float> hData;
@@ -103,6 +101,24 @@ namespace kacrf
 			this->ksum = this->Multiply(w);
 		};//end kernel constructor
 
+		/** pick out subset of index 1:ntot */
+		static std::vector<size_t> RandomIndexSubset(size_t ntot, size_t nsel)
+		{
+			// Initialize
+			std::vector<size_t> vtot(ntot);
+	
+			// set up big vec
+			std::iota(vtot.begin(),vtot.end(),0);
+	
+			// shuffle
+			std::random_shuffle(vtot.begin(),vtot.end());
+	
+			// set output
+			std::vector<size_t> vout(vtot.begin(), vtot.begin() + nsel);
+			return vout;
+	
+		};
+
 
 		/* Quick ksum print */
 		void PrintKsum(){this->ksum.Print();};
@@ -177,12 +193,14 @@ namespace kacrf
 			// make amap
 			size_t totn = K.row();
 			if (ngid > totn){ ngid = totn; }
-			auto amap = std::vector<size_t>(ngid,0);
-			if (ngid != 1)
-			{
-				size_t stepsz = totn/ngid;
-				for ( size_t j = 1; j< amap.size(); j++) amap[j] =j*stepsz;
-			}
+
+			std::vector<size_t> amap = Kernel::RandomIndexSubset(totn, ngid);
+			//auto amap = std::vector<size_t>(ngid,0);
+			//if (ngid != 1)
+			//{
+			//	size_t stepsz = totn/ngid;
+			//	for ( size_t j = 1; j< amap.size(); j++) amap[j] =j*stepsz;
+			//}
 
 			// make bmap
 			auto bmap = std::vector<size_t>(K.col());

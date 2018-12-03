@@ -3,7 +3,7 @@
 
 
 #include <gofmm_interface.hpp>
-
+#include <vector>
 #include <math.h> // sqrt
 #include <random>
 #include <iostream>
@@ -50,6 +50,7 @@ namespace kacrf
 	    };
 	  
 	}; /** end class Statistic */
+
 
 	/** Simple function to return hData size (m*n) as int */
 	int hDataSize(hData in)
