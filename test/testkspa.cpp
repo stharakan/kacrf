@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
 	outfile << mv_err._avg << "," << mv_err._max << "," << mv_err._min 
 		<< "," << mv_time._avg << "," << mv_time._max << "," << mv_time._min
 		<< "," << kern_time << "," << n << "," << m << "," << k << "," 
-		<< s << "," << stol << "," << budget << "," << threads << std::endl;
+		<< s << "," << stol << "," << budget << std::endl;
 	outfile.close();
 
 
