@@ -11,6 +11,7 @@ __pycache__
 # Ignore any out files
 *.o
 *.csv
+ofiles/*.m
 
 # Ignore interaction output, can change this if we'd like to use it
 interaction.m
