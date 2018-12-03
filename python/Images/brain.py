@@ -128,7 +128,10 @@ class Brain:
 
         return am
 
-    def SaveSliceProblem(self, slc=-1):
+    def SaveSliceProblem(self, sdir =None, slc=-1):
+        if sdir is None:
+            sdir = self.bdir
+
         # set up file names
         imname = self.bname + '_s' + str(slc) + '_allmods.bin'
         segname = self.bname + '_s' + str(slc) + '_seg.bin'
@@ -151,41 +154,44 @@ class Brain:
         full = np.concatenate([t1,t1ce,t2,fl],axis = 1) 
 
         # write to binary, so that 4 int at one pixel are contiguous
-        impath = os.path.join(self.bdir,imname)
+        impath = os.path.join(sdir,imname)
         fid = open(impath,'bw')
         full.tofile(fid)
         fid.close()
 
         # write seg to binary 
-        impath = os.path.join(self.bdir,segname)
+        impath = os.path.join(sdir,segname)
         fid2 = open(impath,'bw')
         seg.tofile(fid2)
         fid2.close()
 
         # write probs to binary
-        impath = os.path.join(self.bdir,probsname)
+        impath = os.path.join(sdir,probsname)
         fid3 = open(impath,'bw')
         probs.tofile(fid3)
         fid3.close()
 
-    def ReadSliceProblem(self,slc=-1):
+    def ReadSliceProblem(self,sdir = None,slc=-1):
+        if sdir is None:
+            sdir = self.bdir
+
         # set up file names
         imname = self.bname + '_s' + str(slc) + '_allmods.bin'
         segname = self.bname + '_s' + str(slc) + '_seg.bin'
         probsname = self.bname + '_s' + str(slc) + '_probs.bin'
         
         # write to binary, so that 4 int at one pixel are contiguous
-        impath = os.path.join(self.bdir,imname)
+        impath = os.path.join(sdir,imname)
         im = np.fromfile(impath,dtype=np.float32)
         im = im.reshape( (4,240,240),order='F' ) 
 
         # write seg to binary 
-        impath = os.path.join(self.bdir,segname)
+        impath = os.path.join(sdir,segname)
         seg = np.fromfile(impath,dtype=np.uint8)
         seg = seg.reshape( (240, 240), order='F')
 
         # write probs to binary
-        impath = os.path.join(self.bdir,probsname)
+        impath = os.path.join(sdir,probsname)
         probs = np.fromfile(impath,dtype=np.float32)
         probs = probs.reshape( (-1, 240*240), order = 'F')
 
