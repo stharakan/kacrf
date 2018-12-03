@@ -37,6 +37,9 @@ tester:
 tkspa:
 	$(CC) $(CFLAGS) test/testkspa.cpp $(INC) $(LIB) -o bin/kspa-test
 
+bcrf:
+	$(CC) $(CFLAGS) test/brain_crf.cpp $(INC) $(LIB) -o bin/bcrf
+
 # Spikes
 ticket:
 	$(CC) $(CFLAGS) spikes/ticket.cpp $(INC) $(LIB) -o bin/ticket
