@@ -1,6 +1,17 @@
 import numpy as np
 from sklearn.metrics import f1_score # dice score
 from sklearn.preprocessing import normalize # for resetting probabilities
+import scipy.ndimage as ndimage
+import matplotlib.pyplot as plt
+
+def VisImage(img):
+    plt.imshow(img, interpolation='nearest',cmap='gray')
+    plt.show()
+
+def VisImageFromFlat(img,imsz=240):
+    img = img.reshape(imsz,imsz)
+    plt.imshow(img, interpolation='nearest',cmap='gray')
+    plt.show()
 
 
 # get dice from unrounded probability matrix (has
@@ -8,7 +19,7 @@ def BinaryDiceFromProbability(Q,seg,prob_cut=0.5):
     # round probability 
     qshape = Q.shape
     yg = np.zeros( (qshape[0],1) )
-    yg[Q > prob_cut ] = 1.
+    yg[Q[:,1] > prob_cut ] = 1.
 
     # compute dice by calling other func here
     dice = BinaryDice(yg,seg)
@@ -17,8 +28,8 @@ def BinaryDiceFromProbability(Q,seg,prob_cut=0.5):
 
 # method to create image -- move to tools 
 def BinaryDice(ytr,yg,target = 1.):
-    ytr = ytr.flatten(order='F')
-    yg = yg.flatten(order='F')
+    ytr = ytr.flatten()
+    yg = yg.flatten()
 
     return f1_score(ytr,yg,pos_label=target)
 
@@ -37,7 +48,7 @@ def ResetProbabilityZeros(P):
     return P
 
 # method to create image -- move to tools 
-def CreateProbsFromSeg2D(seg,sigma = 0.35):
+def CreateProbsFromSeg2D(seg,t1=None,sigma = 0.35):
 
     # make probabilities (bg and target)
     probs_bg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.25
@@ -45,13 +56,42 @@ def CreateProbsFromSeg2D(seg,sigma = 0.35):
 
     # set final array
     probs = np.where(seg != 0, probs_tg, probs_bg)
-    probs = ResetProbabilityZeros(probs)
-    probs = probs.reshape( (seg.size,1 ),order='F')
-    probs = probs.astype(np.float32)
-    probs = np.concatenate( (probs,1-probs), axis=1 )
+    if t1 is not None:
+        probs = np.where(t1 == 0, 0.0, probs)
 
+    # scale probabilities and reshape
+    probs = ResetProbabilityZeros(probs)
+    probs = probs.reshape( (seg.size,1 ),order='C')
+    probs = probs.astype(np.float32)
+
+    # one for each class
+    probs = np.concatenate( (1-probs,probs), axis=1 )
     return probs
 
+# method to create image -- move to tools 
+def CreateSmoothProbsFromSeg2D(seg,t1=None,sigma = 0.35,smooth=5):
+
+    # make probabilities (bg and target)
+    probs_bg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.25
+    probs_tg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.75
+
+    # set final array
+    seg = ndimage.gaussian_filter(seg, sigma=(1,1), order = 0)
+    probs = np.where(seg != 0, probs_tg, probs_bg)
+    if t1 is not None:
+        probs = np.where(t1 == 0, 0.0, probs)
+
+    # smooth probabilities
+    probs = ndimage.gaussian_filter(probs, sigma=(smooth, smooth), order=0)
+
+    # scale probabilities and reshape
+    probs = ResetProbabilityZeros(probs)
+    probs = probs.reshape( (seg.size,1 ),order='C')
+    probs = probs.astype(np.float32)
+
+    # one for each class
+    probs = np.concatenate( (1-probs,probs), axis=1 )
+    return probs
 
 # method to create image -- move to tools 
 def CreateImage(sz = 20, sigma = 0.3):
