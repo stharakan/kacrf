@@ -6,6 +6,8 @@
 #include <gofmm.hpp>
 #include <containers/SPDMatrix.hpp>
 #include <containers/KernelMatrix.hpp>
+#include <fstream> // binary reading
+#include <assert.h> // assertion
 
 
 namespace kacrf
@@ -59,6 +61,66 @@ namespace kacrf
 		return config;
 	};// end config w/ params
 
+	void PrintConfigInfo(GoFMM_config conf,string title="GoFMM PARAMS")
+	{
+
+		DistanceMetric metric = conf.MetricType();
+
+		size_t n = conf.ProblemSize(); 
+
+		size_t m = conf.LeafNodeSize();
+
+		size_t k = conf.NeighborSize();
+
+		size_t s = conf.MaximumRank();
+
+		float stol = conf.Tolerance();
+
+		float budget = conf.Budget();
+
+		std::cout << "-----------------------" << std::endl;
+		std::cout << "  " << title  << "  " << std::endl;
+		std::cout << "N: "<< n << std::endl;
+		std::cout << "m: "<< m << std::endl;
+		std::cout << "k: "<< k << std::endl;
+		std::cout << "stol: "<< stol << std::endl;
+		std::cout << "budget: "<< budget << std::endl;
+		std::cout << "-----------------------" << std::endl;
+
+	};
+	
+	/* Read data from binary into a given shape */
+	hData BinaryToData(string fileloc, int m, int n)
+	{	
+		// Get number of elements, check equality
+		std::ifstream file(fileloc,std::ios::binary);
+		file.seekg(0,ios::end);
+		const size_t num_el = file.tellg()/sizeof(float);
+		assert( (size_t) m*n == num_el );
+
+		// Initialize hdata
+		hData dout( (size_t) m, (size_t) n);
+
+		// Go back to begining, read into data
+		file.seekg(0,ios::beg);
+		file.read( (char*)dout.data(), num_el*sizeof(float) );
+		file.close();
+
+		// return
+		return dout;
+	};
+
+	/* Read data from binary into a given shape */
+	void DataToBinary(hData mat, string fileloc)
+	{
+		// Get file
+		std::ofstream file(fileloc,std::ofstream::binary);
+
+		// Go back to begining, read into data
+		file.write( reinterpret_cast<const char*>( mat.data() ), mat.size() * sizeof(float) );
+		//file.write( (char*)(mat.data()), mat.size() * sizeof(float) );
+		file.close();
+	};
 	
 	/* Kernel class */
 	class Kernel
@@ -122,6 +184,9 @@ namespace kacrf
 
 		/* Quick ksum print */
 		void PrintKsum(){this->ksum.Print();};
+		
+		/* Get ksum print */
+		hData GetKsum(){ return this->ksum;};
 
 		/* Normalized multiply */
 		hData NormMultiply(hData w)
@@ -143,7 +208,7 @@ namespace kacrf
 				int ki = i % ksize;
 				float denom = this->ksum[ki] - 1.0;
 				// check for zero
-				if (denom <= 1e-7 || denom >= -1e-7){denom=1.0;};
+				if (denom <= 1e-7 && denom >= -1e-7){denom=1.0;};
 				
 				float temp = (u2[i] - w[i])/(denom);
 				u2[i] = temp;
@@ -182,6 +247,28 @@ namespace kacrf
 
 			return K;
 		};
+
+		/* Test norm multiply -- returns float value of rel err */
+		float TestNormMultiply()
+		{
+			size_t n = this->X.col();
+			// make all ones
+			hData w(n,1);
+			std::fill(w.begin(), w.end(),1.0);
+			
+			// u vec
+			hData u = this->NormMultiply(w);
+			float rel = 0.0;
+			for(int i =0; i<n; i++)
+			{
+				float temp = u[i] - 1.0;
+				rel += temp * temp;
+			}
+			rel /= (float) n;
+			return rel;
+
+		};
+
 
 
 		/* Compute Error */
