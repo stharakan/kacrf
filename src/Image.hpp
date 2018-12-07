@@ -35,7 +35,7 @@ namespace kacrf
 
 			/** TODO constructor from file (for brains) */
 
-			/** TODO Spatial feature function */
+			/** Spatial feature function */
 			hData ExtractSpatialFeatures(float spa_bw)
 			{
 				int nn = this->pixels();
@@ -65,7 +65,7 @@ namespace kacrf
 				//return temp;
 			};
 			
-			/** TODO Appearance feature function */
+			/** Appearance feature function */
 			hData ExtractAppearanceFeatures(float app_bw_spa, float app_bw_int)
 			{
 				int nn = this->pixels();
