@@ -137,26 +137,26 @@ namespace kacrf
 			void PrintDiceScore(std::vector<float>& dices,float target = 1.0)
 			{
 				hData yg = ProbabilityToSeg(this->unary); 
-				float curdice = ComputeDice(this->seg,yg,target); //TODO, for now on floats --> soon template it
+				float curdice = ComputeDice(this->seg,yg,target); 
 
 				// Print what we want -- 1. iter dice 2. 0 (init)
 				std::cout << " It |   Dice   " << std::endl << "---------------" << std::endl;
 				std::cout << 0 << " | " << curdice << std::endl;
 
-				// Save to first element of dices, TODO -- check this with an assert?
+				// Save to first element of dices, 
 				dices[0] = curdice;
 			};
 
 			void PrintDiceScore(std::vector<float>&dices, int iter, hData Qmat, float target = 1.0)
 			{
 				hData yg = ProbabilityToSeg(Qmat); 
-				float curdice = ComputeDice(this->seg,yg,target); //TODO, for now on floats --> soon template it
+				float curdice = ComputeDice(this->seg,yg,target); 
 
 				// Print what we want -- 1. iter dice 2. 0 (init)
 				//std::cout << " It |   Dice   " << std::endl << "---------------" << std::endl;
 				std::cout << iter << " | " << curdice << std::endl;
 
-				// Save to first element of dices, TODO -- check this with an assert?
+				// Save to nth element of dices, 
 				dices[iter] = curdice;
 			};
 
