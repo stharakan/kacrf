@@ -47,6 +47,20 @@ def ResetProbabilityZeros(P):
     P[ P > (1-ep) ] = 1-ep
     return P
 
+# create probs from brain file
+def CreateBinaryProbsFromModelFile(bb,slc,mstr,mdir):
+    # read slice of probabilities
+    probs = bb.ReadModel(mstr,slc=slc,mdir=mdir)
+    
+    # scale probabilities and reshape
+    probs = ResetProbabilityZeros(probs)
+    probs = probs.reshape( (probs.size,1 ),order='C')
+    probs = probs.astype(np.float32)
+
+    # one for each class
+    probs = np.concatenate( (1-probs,probs), axis=1 )
+    return probs
+
 # method to create image -- move to tools 
 def CreateProbsFromSeg2D(seg,t1=None,sigma = 0.35):
 
