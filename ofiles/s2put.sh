@@ -47,7 +47,7 @@ fi
 
 if [ ! $TEST ]
 then
-	scp ./${FILE} tharakan@stampede2.tacc.utexas.edu:/home1/03158/tharakan/research/kacrf/ofiles/
+	scp ./${FILE} tharakan@stampede2.tacc.utexas.edu:/home1/03158/tharakan/research/kacrf/data/
 else
 	echo "transfering \"$FILE\" to this dir"
 fi
