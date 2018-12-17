@@ -40,6 +40,9 @@ tkspa:
 bcrf:
 	$(CC) $(CFLAGS) test/brain_crf.cpp $(INC) $(LIB) -o bin/bcrf
 
+cvcrf:
+	$(CC) $(CFLAGS) test/cv_brain_crf.cpp $(INC) $(LIB) -o bin/cvcrf
+
 # Spikes
 ticket:
 	$(CC) $(CFLAGS) spikes/ticket.cpp $(INC) $(LIB) -o bin/ticket

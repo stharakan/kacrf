@@ -37,6 +37,13 @@ int main( int argc, char *argv[] )
 	/** The amount of direct evaluation (not used in neighbor search). */
 	float budget = 0.9;
 	sscanf( argv[ 6 ], "%f", &budget );
+	/** App bw spa */
+	float app_bw_spa = 20.0;
+	//sscanf( argv[ 7 ], "%f", &app_bw_spa );
+
+	/** app bw int */
+	float app_bw_int = 1.0;
+	//sscanf( argv[ 8 ], "%f", &app_bw_spa );
 
 	/** Number of right-hand sides. */
 	size_t nrhs = 10;
@@ -64,12 +71,12 @@ int main( int argc, char *argv[] )
 
 	// Create features
 	double feat_time_beg = omp_get_wtime();
-	hData Fspa = im.ExtractSpatialFeatures(spa_bw); 
+	hData Fapp = im.ExtractAppearanceFeatures(app_bw_spa,app_bw_int); 
 	double feat_time = omp_get_wtime() - feat_time_beg;
 	
 	// Compute actual kernel
 	double kern_time_beg = omp_get_wtime();
-	Kernel kspa = Kernel(Fspa,config);
+	Kernel kspa = Kernel(Fapp,config);
 	double kern_time = omp_get_wtime() - kern_time_beg;
 
 	
@@ -138,12 +145,14 @@ int main( int argc, char *argv[] )
 	std::cout << "-----------------------" << std::endl;
 
 	/** file to append data to */ 
-	std::string fname = "data_kspa.csv";
+	std::string fname = "data_kapp.csv";
 	std::ofstream outfile;
 	outfile.open(fname, std::ios_base::app);
 	outfile << mv_err._avg << "," << mv_err._max << "," << mv_err._min 
 		<< "," << mv_time._avg << "," << mv_time._max << "," << mv_time._min
-		<< "," << kern_time << "," << n << "," << m << "," << k << "," 
+		<< "," << kern_time << "," 
+		<< app_bw_spa << "," << app_bw_int << ","
+		<< n << "," << m << "," << k << "," 
 		<< s << "," << stol << "," << budget << std::endl;
 	outfile.close();
 

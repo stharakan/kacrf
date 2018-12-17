@@ -6,8 +6,8 @@
 #include <gofmm.hpp>
 #include <containers/SPDMatrix.hpp>
 #include <containers/KernelMatrix.hpp>
-
-
+#include <fstream> // binary reading
+#include <assert.h> // assertion
 
 
 namespace kacrf
@@ -61,6 +61,66 @@ namespace kacrf
 		return config;
 	};// end config w/ params
 
+	void PrintConfigInfo(GoFMM_config conf,string title="GoFMM PARAMS")
+	{
+
+		DistanceMetric metric = conf.MetricType();
+
+		size_t n = conf.ProblemSize(); 
+
+		size_t m = conf.LeafNodeSize();
+
+		size_t k = conf.NeighborSize();
+
+		size_t s = conf.MaximumRank();
+
+		float stol = conf.Tolerance();
+
+		float budget = conf.Budget();
+
+		std::cout << "-----------------------" << std::endl;
+		std::cout << "  " << title  << "  " << std::endl;
+		std::cout << "N: "<< n << std::endl;
+		std::cout << "m: "<< m << std::endl;
+		std::cout << "k: "<< k << std::endl;
+		std::cout << "stol: "<< stol << std::endl;
+		std::cout << "budget: "<< budget << std::endl;
+		std::cout << "-----------------------" << std::endl;
+
+	};
+	
+	/* Read data from binary into a given shape */
+	hData BinaryToData(string fileloc, int m, int n)
+	{	
+		// Get number of elements, check equality
+		std::ifstream file(fileloc,std::ios::binary);
+		file.seekg(0,ios::end);
+		const size_t num_el = file.tellg()/sizeof(float);
+		assert( (size_t) m*n == num_el );
+
+		// Initialize hdata
+		hData dout( (size_t) m, (size_t) n);
+
+		// Go back to begining, read into data
+		file.seekg(0,ios::beg);
+		file.read( (char*)dout.data(), num_el*sizeof(float) );
+		file.close();
+
+		// return
+		return dout;
+	};
+
+	/* Read data from binary into a given shape */
+	void DataToBinary(hData mat, string fileloc)
+	{
+		// Get file
+		std::ofstream file(fileloc,std::ofstream::binary);
+
+		// Go back to begining, read into data
+		file.write( reinterpret_cast<const char*>( mat.data() ), mat.size() * sizeof(float) );
+		//file.write( (char*)(mat.data()), mat.size() * sizeof(float) );
+		file.close();
+	};
 	
 	/* Kernel class */
 	class Kernel
@@ -103,9 +163,30 @@ namespace kacrf
 			this->ksum = this->Multiply(w);
 		};//end kernel constructor
 
+		/** pick out subset of index 1:ntot */
+		static std::vector<size_t> RandomIndexSubset(size_t ntot, size_t nsel)
+		{
+			// Initialize
+			std::vector<size_t> vtot(ntot);
+	
+			// set up big vec
+			std::iota(vtot.begin(),vtot.end(),0);
+	
+			// shuffle
+			std::random_shuffle(vtot.begin(),vtot.end());
+	
+			// set output
+			std::vector<size_t> vout(vtot.begin(), vtot.begin() + nsel);
+			return vout;
+	
+		};
+
 
 		/* Quick ksum print */
 		void PrintKsum(){this->ksum.Print();};
+		
+		/* Get ksum print */
+		hData GetKsum(){ return this->ksum;};
 
 		/* Normalized multiply */
 		hData NormMultiply(hData w)
@@ -127,7 +208,7 @@ namespace kacrf
 				int ki = i % ksize;
 				float denom = this->ksum[ki] - 1.0;
 				// check for zero
-				if (denom <= 1e-7 || denom >= -1e-7){denom=1.0;};
+				if (denom <= 1e-7 && denom >= -1e-7){denom=1.0;};
 				
 				float temp = (u2[i] - w[i])/(denom);
 				u2[i] = temp;
@@ -167,6 +248,28 @@ namespace kacrf
 			return K;
 		};
 
+		/* Test norm multiply -- returns float value of rel err */
+		float TestNormMultiply()
+		{
+			size_t n = this->X.col();
+			// make all ones
+			hData w(n,1);
+			std::fill(w.begin(), w.end(),1.0);
+			
+			// u vec
+			hData u = this->NormMultiply(w);
+			float rel = 0.0;
+			for(int i =0; i<n; i++)
+			{
+				float temp = u[i] - 1.0;
+				rel += temp * temp;
+			}
+			rel /= (float) n;
+			return rel;
+
+		};
+
+
 
 		/* Compute Error */
 		float ComputeError(hData w, hData pot, size_t ngid = 1)
@@ -177,12 +280,14 @@ namespace kacrf
 			// make amap
 			size_t totn = K.row();
 			if (ngid > totn){ ngid = totn; }
-			auto amap = std::vector<size_t>(ngid,0);
-			if (ngid != 1)
-			{
-				size_t stepsz = totn/ngid;
-				for ( size_t j = 1; j< amap.size(); j++) amap[j] =j*stepsz;
-			}
+
+			std::vector<size_t> amap = Kernel::RandomIndexSubset(totn, ngid);
+			//auto amap = std::vector<size_t>(ngid,0);
+			//if (ngid != 1)
+			//{
+			//	size_t stepsz = totn/ngid;
+			//	for ( size_t j = 1; j< amap.size(); j++) amap[j] =j*stepsz;
+			//}
 
 			// make bmap
 			auto bmap = std::vector<size_t>(K.col());

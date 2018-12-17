@@ -3,7 +3,7 @@
 
 
 #include <gofmm_interface.hpp>
-
+#include <vector>
 #include <math.h> // sqrt
 #include <random>
 #include <iostream>
@@ -50,6 +50,7 @@ namespace kacrf
 	    };
 	  
 	}; /** end class Statistic */
+
 
 	/** Simple function to return hData size (m*n) as int */
 	int hDataSize(hData in)
@@ -107,8 +108,17 @@ namespace kacrf
 		// loop TODO -- write omp for this
 		for (int j = 0; j < nn; j++)
 		{
-			bool tbool = truth[j] == target;
-			bool gbool = guess[j] == target;
+			bool tbool;
+			bool gbool;
+			if (target == 0.0)
+			{
+				tbool = truth[j] != target;
+				gbool = guess[j] != target;
+			} else
+			{
+				tbool = truth[j] == target;
+				gbool = guess[j] == target;
+			}
 
 			if (tbool){ tcount++;};
 			
