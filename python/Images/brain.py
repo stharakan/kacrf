@@ -15,10 +15,13 @@ class Brain:
     def __str__(self):
         return "Name: %s \nLoc: %s" % (self.bname, self.bdir)
 
-    def ReadModel(self,model_string,slc=-1):
+    def ReadModel(self,model_string,slc=-1,mdir=None):
         # Set up file
         imname = self.bname + model_string
         impath = os.path.join(self.bdir,imname)
+        if mdir is not None:
+            impath = os.path.join(mdir,imname)
+
 
         # load nifti
         nii = nib.load(impath)
@@ -91,11 +94,6 @@ class Brain:
         if sdir is None:
             sdir = self.bdir
 
-        # set up file names
-        imname = self.bname + '_s' + str(slc) + '_allmods.bin'
-        segname = self.bname + '_s' + str(slc) + '_seg.bin'
-        probsname = self.bname + '_s' + str(slc) + '_probs.bin'
-    
         #bsp = BrainSliceProblem(self.bdir,self.bname,slc,_sig = noise,_smooth = smooth)
         bsp = BrainSliceProblem.CreateBSPFromSeg(self.bdir,self.bname,slc,segsmooth = noise,smooth = smooth)
 
@@ -137,6 +135,35 @@ class BrainSliceProblem:
         self.seg = _seg
         self.probs = _probs
         self.imsz = 240
+
+        
+    @classmethod
+    def CreateBSPFromFile(cls,_bdir,_bname,_slc,mstr,mdir):
+        # set brain up
+        bb = Brain(_bdir,_bname)
+        slc = _slc
+
+        # create problem
+        t1,t1ce,t2,fl,seg = bb.ReadAll(slc)
+
+        # reshape each individual array
+        t1 = t1.reshape(-1,1)
+        t2 = t2.reshape(-1,1)
+        t1ce = t1ce.reshape(-1,1)
+        fl = fl.reshape(-1,1,)
+        seg = seg.reshape(-1,1)
+        seg = seg.astype(np.float32)
+        
+        # reshape into large array 
+        im = np.concatenate([t1,t1ce,t2,fl],axis = 1) 
+
+        # read probs
+        probs = imt.CreateBinaryProbsFromModelFile(bb,slc,mstr,mdir)
+
+        
+        # return class object
+        return cls(bb,slc,im,seg,probs)
+
 
     @classmethod
     def CreateBSPFromSeg(cls,_bdir,_bname,_slc,segsmooth=1,smooth=1):
