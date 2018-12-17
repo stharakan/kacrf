@@ -69,6 +69,33 @@ def CreateProbsFromSeg2D(seg,t1=None,sigma = 0.35):
     return probs
 
 # method to create image -- move to tools 
+def CreateSmoothFlipProbsFromSeg2D(seg,t1=None,segsmooth = 5,smooth=5):
+
+    # make probabilities (bg and target)
+    #probs_bg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.25
+    #probs_tg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.75
+    flipper = np.random.uniform( size = seg.shape )
+
+    # set final array
+    #seg = ndimage.gaussian_filter(seg, sigma=(1.5,1.5), order = 0)
+    seg = ndimage.gaussian_filter(seg, sigma=(segsmooth,segsmooth), order = 0)
+    probs = np.where(seg > flipper, 1.0, 0.0)
+    if t1 is not None:
+        probs = np.where(t1 == 0, 0.0, probs)
+
+    # smooth probabilities
+    probs = ndimage.gaussian_filter(probs, sigma=(smooth, smooth), order=0)
+
+    # scale probabilities and reshape
+    probs = ResetProbabilityZeros(probs)
+    probs = probs.reshape( (seg.size,1 ),order='C')
+    probs = probs.astype(np.float32)
+
+    # one for each class
+    probs = np.concatenate( (1-probs,probs), axis=1 )
+    return probs
+
+# method to create image -- move to tools 
 def CreateSmoothProbsFromSeg2D(seg,t1=None,sigma = 0.35,smooth=5):
 
     # make probabilities (bg and target)
@@ -76,7 +103,8 @@ def CreateSmoothProbsFromSeg2D(seg,t1=None,sigma = 0.35,smooth=5):
     probs_tg = np.random.randn( seg.shape[0],seg.shape[1] ) * sigma + 0.75
 
     # set final array
-    seg = ndimage.gaussian_filter(seg, sigma=(1,1), order = 0)
+    #seg = ndimage.gaussian_filter(seg, sigma=(1.5,1.5), order = 0)
+    seg = ndimage.gaussian_filter(seg, sigma=(1.,1.), order = 0)
     probs = np.where(seg != 0, probs_tg, probs_bg)
     if t1 is not None:
         probs = np.where(t1 == 0, 0.0, probs)
