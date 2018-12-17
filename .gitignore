@@ -12,6 +12,7 @@ __pycache__
 *.o
 *.csv
 ofiles/*.m
+data/*
 
 # Ignore interaction output, can change this if we'd like to use it
 interaction.m
