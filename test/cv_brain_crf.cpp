@@ -23,8 +23,8 @@ int main( int argc, char *argv[] )
 	size_t m = 4096; // maximum leaf node size
 	size_t k = 128; // neighbors
 	size_t s = 4096; // max off diag rank
-	float stol = 1E-5; // approximation tol
-	float budget = 0.5; // amount of direct eval
+	float stol = 1E-7; // approximation tol
+	float budget = 0.8; // amount of direct eval
 	DistanceMetric metric = GEOMETRY_DISTANCE; // metric
 
 	/* Set CRF parameters*/
@@ -37,8 +37,8 @@ int main( int argc, char *argv[] )
 	sscanf( argv[ 3 ], "%f", &app_bw_int );
 
 
-	float app_weights[15]= {100.0,10.0,1.0,0.1,0.01, 100.0,10.0,1.0,0.1,0.01, 100.0,10.0,1.0,0.1,0.01}; // weighting of app kernel
-	float pair_weights[15] = {.01,0.1,1.0,1.0,1.0, 0.1,1.0,10.0,10.0,10.0, 0.001,0.01,0.1,0.1,0.1 }; // weighting of pairwise message
+	float app_weights[12] = {  1000.0,100.0,10.0,1.0,  1000.0,100.0,10.0,1.0, 1000.0,100.0,10.0,1.0 }; // weighting of app kernel
+	float pair_weights[12]= {  .001,.01,0.1,1.0,       .01,0.1,1.0,10.0,      0.1,1.0,10.0,100.0 }; // weighting of pairwise message
 	//float app_weights[5]= {100.0,10.0,1.0,0.1,0.01}; // weighting of app kernel
 	//float pair_weights[5] = {1.0,1.0,1.0,1.0,1.0 }; // weighting of pairwise message
 	int crf_iters = 2; // crf iters to take
@@ -46,8 +46,11 @@ int main( int argc, char *argv[] )
 	
 	/* Set brain parameters */
 	string bdir = "/home1/03158/tharakan/research/kacrf/data/";
-	string bname = "Brats17_TCIA_621_1";
+	//string bname = "Brats17_TCIA_621_1";
+	//sscanf( argv[ 4 ], "%s", &bname );
+	string bname = argv[4];
 	int slc = 53;
+	sscanf( argv[ 5 ], "%d", &slc );
 	int cc = 2;
 	int mods = 4;
 
@@ -81,7 +84,7 @@ int main( int argc, char *argv[] )
 	//float app_err = kapp.ComputeError(w,u,ngid);
 	
 
-	for (int c = 0; c < 15; c++)
+	for (int c = 0; c < 12; c++)
 	{
 		double i_mtime = omp_get_wtime();
 		float app_weight = app_weights[c];
