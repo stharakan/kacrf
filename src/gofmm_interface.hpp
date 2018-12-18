@@ -121,6 +121,104 @@ namespace kacrf
 		//file.write( (char*)(mat.data()), mat.size() * sizeof(float) );
 		file.close();
 	};
+
+	/* Exact kernel class -- TODO virtual kernel class that contains functions to be overwritten OR template on kerntype */
+	//class ExactKernel
+	//{
+	//	public: 
+
+	//	/* Default constructor */
+	//	ExactKernel()
+	//	{
+	//		/* Do nothing */
+	//	}
+	//	
+	//	/* Constructor -- sets up trees + finds neighbors*/
+	//	ExactKernel( hData X )
+	//	{
+	//		// Set up kernel
+	//		GoFMM_Kernel K( X );
+	//		
+	//		// set up amap, bmap, x is d by n
+	//		size_t n = X.col();
+	//		auto amap = std::vector<size_t>(n);
+	//		std::iota( amap.begin(), amap.end(), 0);
+	//		//#pragma omp parallel for
+	//		//for ( size_t j = 0; j< bmap.size(); j++) amap[j] =j;
+	//		
+	//		// Extract
+	//		this-> KK = K(amap,amap);
+
+	//		// get ksum
+	//		hData w(n,1);
+	//		std::fill(w.begin(), w.end(),1.0);
+	//		this->ksum = this->Multiply(w);
+	//	}; // end constructor
+
+	//	// Multiply
+	//	hData Multiply(hData w)
+	//	{
+	//		// initialize exact
+	//		auto exact = w;
+	//		
+	//		// Exact multiply
+	//		hmlp::xgemm
+	//	  (
+	//	    "N", "N",
+	//	    this->KK.row(), w.col(), w.row(),
+	//	    1.0,   this->KK.data(),   this->KK.row(),
+	//	             w.data(),     w.row(),
+	//	    0.0, exact.data(), exact.row()
+	//	  );     
+	//		return exact;
+	//	}; // end multiply
+	//	
+	//	// NormMultiply
+	//	hData NormMultiply(hData w)
+	//	{
+	//		hData u2 = this->Multiply(w);
+
+	//		// loop over u2, 
+	//		int ksize = this->ksum.size();
+	//		#pragma omp parallel for
+	//		for (int i =0; i< u2.size();i++)
+	//		{
+	//			// ASSUME GAUSSIAN KERNEL!!
+	//			int ki = i % ksize;
+	//			float denom = this->ksum[ki] - 1.0;
+	//			// check for zero
+	//			if (denom <= 1e-7 && denom >= -1e-7){denom=1.0;};
+	//			
+	//			float temp = (u2[i] - w[i])/(denom);
+	//			u2[i] = temp;
+	//		}
+	//		return u2;
+	//	}; // end normmult
+	//	
+	//	// Print some square subset of K
+	//	void PrintKHead(size_t num = 10)
+	//	{
+	//		auto amap = std::vector<size_t>(num);
+	//		std::iota( amap.begin(), amap.end(), 0);
+
+	//		auto Ksub = this->KK(amap,amap);
+	//		Ksub.Print();
+	//	}
+	//	
+	//	/* Quick ksum print */
+	//	void PrintKsum(){this->ksum.Print();};
+	//	
+	//	/* Get ksum print */
+	//	hData GetKsum(){ return this->ksum;};
+	//	
+	//	private:
+
+	//	hData KK; // full kernel matrix
+	//	hData ksum; // matrix sum to normalize
+
+	//}; // end class exactkernel
+
+
 	
 	/* Kernel class */
 	class Kernel
