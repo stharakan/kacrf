@@ -29,6 +29,8 @@ namespace kacrf
 				float t0 = probs(ni,0);
 				float t1 = probs(ni,1);
 
+				//probs.setvalue(ni,0,0.75*t1 + 0.25*t0); 
+				//probs.setvalue(ni,1,t0 ); 
 				probs.setvalue(ni,0,t1); 
 				probs.setvalue(ni,1,t0); 
 			}
@@ -89,10 +91,10 @@ namespace kacrf
 		{
 			// Compute actual update
 			float temp = log(unary[i]) - pm[i];
-			//Qmat[i] = temp;
+			Qmat[i] = temp;
 
 			// Load into Qmat
-			Qmat[i] = exp(temp);
+			//Qmat[i] = exp(temp);
 		}
 		//std::cout << "update pre exp" << std::endl;
 		//preexp.Print();
@@ -119,7 +121,7 @@ namespace kacrf
 			DenseCRFUpdate(Q, m,im.Unary()); 
 			
 			// Normalize update
-			NormalizeProbabilities(Q);
+			NormalizeLogProbabilities(Q);
 			
 			// Evaluate accuracy and print 
 			im.PrintDiceScore(dice_scores,iter+1,Q,targ); 
