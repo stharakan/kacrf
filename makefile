@@ -43,6 +43,9 @@ bcrf:
 cvcrf:
 	$(CC) $(CFLAGS) test/cv_brain_crf.cpp $(INC) $(LIB) -o bin/cvcrf
 
+mixer:
+	$(CC) $(CFLAGS) test/test_mm.cpp $(INC) $(LIB) -o bin/mixer
+
 # Spikes
 ticket:
 	$(CC) $(CFLAGS) spikes/ticket.cpp $(INC) $(LIB) -o bin/ticket
