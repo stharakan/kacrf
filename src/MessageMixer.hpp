@@ -11,15 +11,15 @@ namespace kacrf
 	class MessageMixer 
 	{
 		public:
-		// Constructor
-		MessageMixer(float _self, float _other)
+		// Constructor -- default is set to 1.0,1.0
+		MessageMixer(float _self=1.0, float _other=1.0)
 		{
 			this->self_weight = _self;
 			this->oth_weight = _other;
 		} // end constructor
 
 		// mix appearance and spatial messages
-		hData BinaryMix( hData mspa, hData mapp)
+		hData BinaryMix( hData mapp, hData mspa)
 		{
 			hData probs = mspa;
 
@@ -50,7 +50,7 @@ namespace kacrf
 
 		}; // end binary mixing function
 
-		hData MultiMix(hData mspa, hData mapp)
+		hData MultiMix(hData mapp, hData mspa)
 		{
 			// get details
 			hData probs = mspa;
@@ -86,7 +86,7 @@ namespace kacrf
 			return probs;
 		}; // end multi-class mixing function
 
-		hData MixMessages(hData mspa, hData mapp)
+		hData MixMessages(hData mapp, hData mspa)
 		{
 
 			int cc = (int) mspa.col();
@@ -95,11 +95,11 @@ namespace kacrf
 			// binary case is handled separately (avoids inner loop)
 			if (cc == 2)
 			{
-				probs = this->BinaryMix(mspa,mapp);
+				probs = this->BinaryMix(mapp,mspa);
 			}
 			else
 			{
-				probs = this->MultiMix(mspa,mapp);
+				probs = this->MultiMix(mapp,mspa);
 			}
 
 			return probs;
