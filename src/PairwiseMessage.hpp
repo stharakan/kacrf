@@ -3,6 +3,7 @@
 #define PAIRWISE_HPP
 
 #include <gofmm_interface.hpp>
+#include <MessageMixer.hpp>
 
 namespace kacrf
 {
@@ -11,15 +12,14 @@ namespace kacrf
 	{
 		public:
 		// Constructor
-		PairwiseMessenger( Kernel kspa, Kernel kapp, float aweight, float mweight)
+		PairwiseMessenger( Kernel kspa, Kernel kapp, float sweight, float oweight)
 		{
 			// Save kernel pointers to current obj
 			this-> kspa = kspa;
 			this-> kapp = kapp;
 
 			// Save weights
-			this-> aweight = aweight;
-			this-> mweight= mweight;
+			this-> mm = MessageMixer(sweight,oweight);
 		};// end constructor
 		
 		/* Compute spatial message and normalize */
@@ -51,21 +51,9 @@ namespace kacrf
 		/* Combine spatial and appearance messages */
 		hData CombineMessages(hData ma, hData ms)
 		{
-			// Find size of messages, initialize TODO: check that these are the same?
-			int nn = (int) ma.row(); // number of obs
-			int cc = (int) ma.col(); // number of classes
-			hData m(nn,cc);
-
-			// loop over nn, cc
-			#pragma omp parallel for
-			for  (int j = 0; j < (nn*cc); j++)
-			{
-				m[j] = this->mweight * ( ms[j] + this->aweight *  ma[j] ); 
-			} 
-			return m;
-
-		}; //message combiner
-
+			hData mout = this->mm.MixMessages(ma,ms);
+			return mout;
+		};//end combine messages
 
 		/* Function to compute multiplies and get final message */
 		hData ComputeMessage(hData probs)
@@ -82,11 +70,9 @@ namespace kacrf
 			return m;
 		}; // message computation
 
-
-
 		private:
 		Kernel kspa, kapp;
-		float aweight, mweight;
+		MessageMixer mm;
 	};// end class PairwiseMessenger
 
 
