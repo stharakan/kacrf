@@ -37,7 +37,7 @@ for bname in bnames:
     
     # save those to file
     for nz in noises:
-        bsp = br.BrainSliceProblem.CreateBSPFromSeg(bb.bdir,bb.bname,slc1,segsmooth=nz,smooth = smt )
+        bsp = br.BrainSliceProblem.CreateBSPFromSeg(bb,slc1,segsmooth=nz,smooth = smt )
         pp = bsp.probs
         sg = bsp.seg
     
@@ -49,7 +49,7 @@ for bname in bnames:
         sg[sg != 0] = 1
         d1 = imt.BinaryDiceFromProbability(pp,sg)
     
-        bsp = br.BrainSliceProblem.CreateBSPFromSeg(bb.bdir,bb.bname,slc2,segsmooth=nz,smooth = smt )
+        bsp = br.BrainSliceProblem.CreateBSPFromSeg(bb,slc2,segsmooth=nz,smooth = smt )
         pp = bsp.probs
         sg = bsp.seg
     
@@ -71,4 +71,3 @@ for bname in bnames:
 plt.show()
 
 
-#bb.SaveSliceProblem(sdir=odir,slc=slc2)
