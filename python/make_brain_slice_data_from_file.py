@@ -30,7 +30,7 @@ for bname in bnames:
     slc2 = cc.most_common(i2)[i2-1][0]
     
     # initialize bsp and view
-    bsp = br.BrainSliceProblem.CreateBSPFromFile(bb.bdir,bb.bname,slc1,mstr,mdir = mdir )
+    bsp = br.BrainSliceProblem.CreateBSPFromFile(bb,slc1,mstr,mdir = mdir )
     bsp.View(sdir = vdir)
     bsp.Save(sdir = odir) 
 
@@ -40,7 +40,7 @@ for bname in bnames:
     d1 = imt.BinaryDiceFromProbability(bsp.probs,sg)
     
     # initialize bsp slc 2 and view
-    bsp = br.BrainSliceProblem.CreateBSPFromFile(bb.bdir,bb.bname,slc2,mstr,mdir = mdir )
+    bsp = br.BrainSliceProblem.CreateBSPFromFile(bb,slc2,mstr,mdir = mdir )
     bsp.View(sdir = vdir)
     bsp.Save(sdir = odir) 
 
@@ -56,4 +56,3 @@ for bname in bnames:
 plt.show()
 
 
-#bb.SaveSliceProblem(sdir=odir,slc=slc2)
