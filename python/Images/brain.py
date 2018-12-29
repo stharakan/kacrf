@@ -14,14 +14,13 @@ class Brain:
     
     def __str__(self):
         return "Name: %s \nLoc: %s" % (self.bname, self.bdir)
-
-    def ReadModel(self,model_string,slc=-1,mdir=None):
+    
+    def ReadBase(self,model_string,slc=-1,mdir=None):
         # Set up file
-        imname = self.bname + model_string
+        imname = model_string
         impath = os.path.join(self.bdir,imname)
         if mdir is not None:
             impath = os.path.join(mdir,imname)
-
 
         # load nifti
         nii = nib.load(impath)
@@ -33,21 +32,44 @@ class Brain:
             bla = nii.get_data()
             return bla[:,:,slc]
 
-    
+    def ReadModel(self,model_string,slc=-1,mdir=None):
+        # Set up file
+        imname = self.bname + model_string
+        impath = os.path.join(self.bdir,imname)
+        if mdir is not None:
+            impath = os.path.join(mdir,imname)
+
+        # load nifti
+        nii = nib.load(impath)
+        
+        # extract numpy array
+        if slc == -1:
+            return nii.get_data()
+        else:
+            bla = nii.get_data()
+            return bla[:,:,slc]
+
+class BrainReader(Brain):
+    def __init__(self,_bdir,_bname,_imflag = '', _sgflag = ''):
+        self.bdir = _bdir
+        self.bname = _bname
+        self.imflag = _imflag
+        self.sgflag = _sgflag
+
     def ReadT2(self,slc=-1):
-        return self.ReadModel('_t2_normaff.nii.gz',slc)
+        return self.ReadModel('_t2' + self.imflag + '.nii.gz',slc)
 
     def ReadT1(self,slc=-1):
-        return self.ReadModel('_t1_normaff.nii.gz',slc)
+        return self.ReadModel('_t1' + self.imflag + '.nii.gz',slc)
     
     def ReadT1ce(self,slc=-1):
-        return self.ReadModel('_t1ce_normaff.nii.gz',slc)
+        return self.ReadModel('_t1ce' + self.imflag + '.nii.gz',slc)
     
     def ReadFlair(self,slc=-1):
-        return self.ReadModel('_flair_normaff.nii.gz',slc)
-    
+        return self.ReadModel('_flair' + self.imflag + '.nii.gz',slc)
+   
     def ReadSeg(self,slc=-1):
-        return self.ReadModel('_seg_aff.nii.gz',slc)
+        return self.ReadModel('_seg' + self.imflag + '.nii.gz',slc)
 
     def ReadAll(self, slc=-1):
         seg = self.ReadSeg(slc) 
@@ -57,74 +79,44 @@ class Brain:
         t2 = self.ReadT2(slc) 
 
         return t1, t1c, t2, fl, seg
-    
-    def SaveBrainToBinary(self):
-        # set up file name
-        imname = self.bname + '_allmods.bin'
-        impath = os.path.join(self.bdir,imname)
-        fid = open(impath,'bw')
 
-        # extract all modalities
+    def ReadImAsArray(self,slc=-1):
         t1,t1ce,t2,fl,seg = self.ReadAll(slc)
+        del seg
 
-        # extract all modalities
-        t1 = t1.reshape(t1.size,1,order='F')
-        t2 = t2.reshape(t2.size,1,order='F')
-        t1ce = t1ce.reshape(t1ce.size,1,order='F')
-        fl = fl.reshape(fl.size,1,order='F')
-
-        # reshape into large array 
-        full = np.concatenate([t1,t1ce,t2,fl],axis = 1) 
-
-        # write to binary, so that 4 int at one pixel are contiguous
-        full.tofile(fid)
-
-    def ReadBrainFromBinary():
-        # set up file name
-        imname = self.bname + '_allmods.bin'
-        impath = os.path.join(self.bdir,imname)
-
-        # read into array
-        am = np.fromfile(impath,dtype=np.float32)
-        am = am.reshape( (4,240,240,155), order = 'F')
-
-        return am
-
-    def SaveSliceProblem(self, sdir =None, slc=-1,noise = 0.15,smooth = 2):
-        if sdir is None:
-            sdir = self.bdir
-
-        #bsp = BrainSliceProblem(self.bdir,self.bname,slc,_sig = noise,_smooth = smooth)
-        bsp = BrainSliceProblem.CreateBSPFromSeg(self.bdir,self.bname,slc,segsmooth = noise,smooth = smooth)
-
-        bsp.Save(sdir = sdir)
-        return bsp
-    
-    def ReadSliceProblem(self,sdir = None,slc=-1):
-        if sdir is None:
-            sdir = self.bdir
-
-        # set up file names
-        imname = self.bname + '_s' + str(slc) + '_allmods.bin'
-        segname = self.bname + '_s' + str(slc) + '_seg.bin'
-        probsname = self.bname + '_s' + str(slc) + '_probs.bin'
+        # reshape each individual array
+        t1 = t1.reshape(-1,1)
+        t2 = t2.reshape(-1,1)
+        t1ce = t1ce.reshape(-1,1)
+        fl = fl.reshape(-1,1,)
         
-        # write to binary, so that 4 int at one pixel are contiguous
-        impath = os.path.join(sdir,imname)
-        im = np.fromfile(impath,dtype=np.float32)
-        im = im.reshape( (4,240,240),order='F' ) 
+        # reshape into large array 
+        im = np.concatenate([t1,t1ce,t2,fl],axis = 1) 
+        return im
 
-        # write seg to binary (as a float? -- don't know c++ importing rn)
-        impath = os.path.join(sdir,segname)
-        seg = np.fromfile(impath,dtype=np.float32)
-        seg = seg.reshape( (240, 240), order='F')
 
-        # write probs to binary
-        impath = os.path.join(sdir,probsname)
-        probs = np.fromfile(impath,dtype=np.float32)
-        probs = probs.reshape( (240*240,-1), order = 'F')
+class ProbReader(Brain):
+    def ReadNecrotic(self, slc=-1):
+        return self.ReadBase('prediction_1.nii.gz',slc)
 
-        return im, seg, probs
+    def ReadEnhancing(self, slc=-1):
+        return self.ReadBase('prediction_4.nii.gz',slc)
+
+    def ReadEdema(self, slc=-1):
+        return self.ReadBase('prediction_2.nii.gz',slc)
+
+    def ReadAll(self,slc=-1):
+        ne = self.ReadNecrotic(slc)
+        ed = self.ReadEdema(slc)
+        en = self.ReadEnhancing(slc)
+
+        return ed, en, ne
+
+    def ReadTumor(self,slc=-1):
+        ed, en, ne = self.ReadAll(slc)
+
+        # add to get wt probabilities
+        return ed + en + ne
 
 
 class BrainSliceProblem:
@@ -136,13 +128,25 @@ class BrainSliceProblem:
         self.probs = _probs
         self.imsz = 240
 
+    @classmethod
+    def CreateBSPFromBaseProbs(cls,bb,bp,slc):
+        # read image
+        im = bb.ReadImAsArray(slc)
+
+        # read seg
+        seg = bb.ReadSeg(slc)
+        seg = seg.astype(np.float32)
+
+        # read probs
+        probs = bp.ReadTumor(slc)
+        probs = probs.reshape( (probs.size,1),order='C' )
+        probs = np.concatenate( (1-probs,probs), axis=1 )
+
+        # return class object
+        return cls(bb,slc,im,seg,probs)
         
     @classmethod
-    def CreateBSPFromFile(cls,_bdir,_bname,_slc,mstr,mdir):
-        # set brain up
-        bb = Brain(_bdir,_bname)
-        slc = _slc
-
+    def CreateBSPFromFile(cls,bb,slc,mstr,mdir):
         # create problem
         t1,t1ce,t2,fl,seg = bb.ReadAll(slc)
 
@@ -166,11 +170,7 @@ class BrainSliceProblem:
 
 
     @classmethod
-    def CreateBSPFromSeg(cls,_bdir,_bname,_slc,segsmooth=1,smooth=1):
-        # set brain up
-        bb = Brain(_bdir,_bname)
-        slc = _slc
-
+    def CreateBSPFromSeg(cls,bb,slc,segsmooth=1,smooth=1):
         # create problem
         t1,t1ce,t2,fl,seg = bb.ReadAll(slc)
         
@@ -244,6 +244,7 @@ class BrainSliceProblem:
             impath = os.path.join(sdir,imbase)
             plt.savefig(impath)
 
+    # TODO: Move out of this function -- some type of tools func, just need seg and im from this 
     def ComputeMedianIntensityDistances(self):
         # extract masks
         cur_size = self.seg.size
